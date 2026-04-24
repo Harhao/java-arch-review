@@ -1,6 +1,6 @@
 {
   "name": "java-arch-review",
-  "description": "Java 服务端设计架构审查工具，基于 19 个核心维度审查 Java/Spring Boot 项目的架构设计合理性与工程实践规范性。",
+  "description": "Java 架构审查工具，基于 19 个核心维度审查 Java/Spring Boot 项目的架构设计合理性与工程实践规范性。",
   "version": "1.0.0",
   "author": {
     "name": "Harhao"

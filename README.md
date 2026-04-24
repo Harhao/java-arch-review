@@ -1,12 +1,33 @@
-# java-server-arch-review
+# java-arch-review
 
-Java 服务端设计架构审查 Skill，基于资深全栈工程师的视角，从 **19 个核心维度**审查 Java/Spring Boot 项目的架构设计合理性与工程实践规范性。
+Java 服务端设计架构审查工具，通过**可执行脚本确定性扫描 + AI 深度分析**的混合模式，从 **19 个核心维度**审查 Java/Spring Boot 项目的架构设计合理性与工程实践规范性。
+
+支持 **Claude Code、Cursor、Windsurf、GitHub Copilot、Gemini CLI、Cline、OpenCode、Codex CLI** 等主流 AI Agent。
 
 ## 安装
 
 ```bash
-npx skills add Harhao/java-server-arch-review
+npx skills add Harhao/java-arch-review
 ```
+
+## 工作原理
+
+```
+┌──────────────────────────────────┐
+│  Phase 1: 脚本扫描 (确定性)       │
+│  bash scripts/arch-review.sh     │
+│  输出 JSON 结构化结果              │
+├──────────────────────────────────┤
+│  Phase 2: AI 深度审查             │
+│  对 needs_ai_review 项读代码判断   │
+│  对 uncoveredDimensions 自主审查   │
+├──────────────────────────────────┤
+│  Phase 3: 合并结果，生成报告       │
+│  健康度评分 + Markdown 报告       │
+└──────────────────────────────────┘
+```
+
+脚本覆盖约 60% 的检查项（确定性静态扫描），剩余 40% 由 AI 深度分析完成。
 
 ## 覆盖维度
 
@@ -37,9 +58,23 @@ npx skills add Harhao/java-server-arch-review
 
 ## 使用方式
 
-### Claude Code
+### 脚本直接调用
 
-安装后可通过 slash command 触发：
+```bash
+# 全量扫描
+bash scripts/arch-review.sh --project /path/to/project --mode full
+
+# PR 增量扫描
+bash scripts/arch-review.sh --project /path/to/project --mode pr
+
+# 聚焦安全维度
+bash scripts/arch-review.sh --project /path/to/project --mode focus --dimensions "sql-injection,secrets,security"
+
+# 快速 BLOCKER 检查
+bash scripts/arch-review.sh --project /path/to/project --mode quick
+```
+
+### Claude Code
 
 ```
 /java-arch-review          # 默认 PR 模式
@@ -47,50 +82,84 @@ npx skills add Harhao/java-server-arch-review
 /java-arch-review 只看安全  # Focus 安全维度
 ```
 
-也可以自然语言触发：
-
-```
-帮我审查一下这个 Java 项目的架构
-review 一下后端代码质量
-检查一下工程规范
-```
-
-### OpenCode
-
-通过 `skill` 工具触发 `java-server-arch-review` skill。
+也可以自然语言触发："帮我审查一下这个 Java 项目的架构"
 
 ### 其他 Agent
 
-Skill 会通过 description 自动被识别和触发。
+通过 setup 脚本安装对应的 Agent 配置：
+
+```bash
+bash adapters/setup.sh --project /path/to/java-project
+bash adapters/setup.sh --project /path/to/java-project --agent cursor
+bash adapters/setup.sh --project /path/to/java-project --agent all
+```
+
+## 支持的 Agent
+
+| Agent | 适配方式 | 触发方式 |
+|-------|---------|---------|
+| Claude Code | `adapters/claude/` | `/java-arch-review` 或自然语言 |
+| OpenCode | `adapters/opencode/` | skill 工具触发 |
+| Cursor | `adapters/cursor/` | 自然语言触发 |
+| Windsurf | `adapters/windsurf/` | 自然语言触发 |
+| GitHub Copilot | `adapters/copilot/` | `@workspace` 触发 |
+| Gemini CLI | `adapters/gemini/` | 自然语言触发 |
+| Cline | `adapters/cline/` | 自然语言触发 |
+| Codex CLI | `AGENTS.md` | 自然语言触发 |
 
 ## 项目结构
 
 ```
 .
-├── SKILL.md                    # Skill 主文件（索引路由）
-├── references/                 # 详细审查规则
-│   ├── _sections.md            # 目录说明
-│   ├── coding-standards.md     # 编码规范
-│   ├── database-index.md       # 数据库索引
-│   ├── sql-injection.md        # SQL 注入防范
-│   ├── config-logging.md       # 配置管理 + 日志
-│   ├── error-handling.md       # 错误处理
-│   ├── code-layering.md        # 代码分层 + DRY
-│   ├── security-auth.md        # 认证与权限
-│   ├── api-design.md           # RESTful + 参数校验
-│   ├── rate-limiting.md        # 限流防护
-│   ├── quality-testing.md      # 文档 + 测试 + 迭代
-│   ├── data-storage.md         # 存储 + 缓存 + 事务
-│   └── db-migration.md         # 迁移 + 迭代规则
-├── commands/                   # Claude Code slash commands
-│   └── java-arch-review.md
-├── .claude-plugin/             # Claude Code plugin manifest
+├── scripts/                        # 可执行扫描脚本
+│   ├── arch-review.sh              # 主入口（AI 调用这一个）
+│   └── lib/
+│       ├── common.sh               # 公共函数库
+│       ├── project-detector.sh     # 项目结构探测
+│       ├── check-sql-injection.sh  # SQL 注入检查
+│       ├── check-hardcoded-secrets.sh  # 硬编码密钥检查
+│       ├── check-config.sh         # 配置管理检查
+│       ├── check-logging.sh        # 日志规范检查
+│       ├── check-error-handling.sh # 错误处理检查
+│       ├── check-code-layering.sh  # 代码分层检查
+│       ├── check-dry.sh            # DRY 原则检查
+│       ├── check-api-validation.sh # 参数校验检查
+│       ├── check-testing.sh        # 测试保障检查
+│       ├── check-data-storage.sh   # 数据存储检查
+│       └── check-db-migration.sh   # 数据库迁移检查
+├── references/                     # 详细审查规则
+│   ├── _sections.md
+│   ├── coding-standards.md
+│   ├── database-index.md
+│   ├── sql-injection.md
+│   ├── config-logging.md
+│   ├── error-handling.md
+│   ├── code-layering.md
+│   ├── security-auth.md
+│   ├── api-design.md
+│   ├── rate-limiting.md
+│   ├── quality-testing.md
+│   ├── data-storage.md
+│   └── db-migration.md
+├── adapters/                       # 多 Agent 适配器（统一管理）
+│   ├── setup.sh                    # 一键安装脚本
+│   ├── claude/                     # Claude Code (plugin.json + slash command)
+│   ├── opencode/                   # OpenCode (plugin JS)
+│   ├── cursor/                     # Cursor (.mdc rules)
+│   ├── windsurf/                   # Windsurf (.windsurfrules)
+│   ├── copilot/                    # GitHub Copilot (instructions)
+│   ├── gemini/                     # Gemini CLI (GEMINI.md)
+│   └── cline/                      # Cline (.clinerules)
+├── .claude-plugin/                 # Claude Code 插件（根目录，插件系统要求）
 │   └── plugin.json
-├── .opencode/                  # OpenCode plugin
+├── .opencode/                      # OpenCode 插件（根目录，插件系统要求）
 │   └── plugins/
 │       └── java-arch-review.js
-├── AGENTS.md                   # Multi-agent support
-├── LICENSE                     # MIT License
+├── commands/                       # Claude Code slash commands（根目录）
+│   └── java-arch-review.md
+├── SKILL.md                        # Skill 主定义文件
+├── AGENTS.md                       # 通用 Agent 指令
+├── LICENSE                         # MIT License
 └── README.md
 ```
 

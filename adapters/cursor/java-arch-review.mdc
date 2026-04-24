@@ -1,0 +1,44 @@
+---
+description: Java 服务端架构审查 - 当用户要求审查 Java/Spring Boot 项目架构、代码质量、工程规范时自动触发
+globs: ["**/*.java", "**/pom.xml", "**/build.gradle"]
+alwaysApply: false
+---
+
+# Java Server Architecture Review
+
+当用户要求审查 Java 项目架构时，执行以下步骤：
+
+## 触发关键词
+架构审查、设计审查、Java 后端审查、review 后端代码、检查工程质量、server arch review
+
+## 执行流程
+
+1. **运行扫描脚本**：
+   ```bash
+   bash {SKILL_DIR}/scripts/arch-review.sh --project {PROJECT_PATH} --mode {MODE}
+   ```
+   - MODE 默认 full，用户可指定: full/pr/focus/quick
+   - 脚本输出 JSON 格式的扫描结果
+
+2. **解析扫描结果**：
+   - `type: "confirmed"` 的发现直接写入报告
+   - `type: "needs_ai_review"` 的发现需要你读取相关代码做深度判断
+   - `uncoveredDimensions` 列出的维度需要你自主审查
+
+3. **深度分析**（对 needs_ai_review 和 uncoveredDimensions）：
+   - 读取 `{SKILL_DIR}/references/` 目录下对应的规则文件
+   - 按规则文件中的检测逻辑分析代码
+   - 给出你的判断和建议
+
+4. **生成报告**：
+   - 合并脚本确认结果 + 你的分析结果
+   - 计算健康度评分 (100分制，BLOCKER -5分，MAJOR -2分，MINOR -1分)
+   - 按 BLOCKER → MAJOR → MINOR 排序输出
+
+## 审查模式
+| 模式 | 说明 |
+|------|------|
+| full | 19 项维度全量扫描 |
+| pr | 仅扫描 git 变更文件涉及的维度 |
+| focus | 指定维度检查（如 --dimensions "sql-injection,security"） |
+| quick | 仅 BLOCKER 级别 |
