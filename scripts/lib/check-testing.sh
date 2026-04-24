@@ -174,7 +174,7 @@ _check_1301_missing_service_tests() {
     local test_names_file
     test_names_file=$(mktemp "${TMPDIR:-/tmp}/check1301_tests.XXXXXX")
     # shellcheck disable=SC2064
-    trap "rm -f '$test_names_file'" RETURN
+    trap "rm -f '${test_names_file:-}'" RETURN
 
     if [[ -n "$test_files" ]]; then
         while IFS= read -r tf; do
@@ -270,6 +270,9 @@ _check_1301_missing_service_tests() {
     if [[ $missing_count -gt 0 ]]; then
         log_info "CHECK-1301: Found $missing_count service class(es) without tests: $missing_list"
     fi
+
+    rm -f "${test_names_file:-}"
+    trap - RETURN
 }
 
 # ==============================================================================

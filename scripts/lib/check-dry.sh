@@ -151,7 +151,7 @@ _check_0701_repeated_strings() {
     tmp_strings=$(mktemp "${TMPDIR:-/tmp}/dry_strings.XXXXXX") || return
 
     # Trap to clean up temp file
-    trap 'rm -f "$tmp_strings"' RETURN
+    trap 'rm -f "${tmp_strings:-}"' RETURN
 
     while IFS= read -r java_file; do
         [[ -z "$java_file" ]] && continue
@@ -246,6 +246,9 @@ _check_0701_repeated_strings() {
             "(multiple files)" \
             "$context"
     done <<< "$repeated"
+
+    rm -f "${tmp_strings:-}"
+    trap - RETURN
 }
 
 # ==============================================================================
@@ -269,7 +272,7 @@ _check_0702_similar_files() {
     # Collect file info: relative path, line count, class name suffix pattern
     local tmp_file_info
     tmp_file_info=$(mktemp "${TMPDIR:-/tmp}/dry_fileinfo.XXXXXX") || return
-    trap 'rm -f "$tmp_file_info"' RETURN
+    trap 'rm -f "${tmp_file_info:-}"' RETURN
 
     while IFS= read -r java_file; do
         [[ -z "$java_file" ]] && continue
@@ -354,6 +357,9 @@ _check_0702_similar_files() {
             "$file_a" \
             "$context"
     done <<< "$pairs"
+
+    rm -f "${tmp_file_info:-}"
+    trap - RETURN
 }
 
 # _check_0702_long_methods PROJECT_PATH
